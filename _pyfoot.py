@@ -9,8 +9,8 @@ KEY_MAP = {
 
 class Actor:
     def __init__(self, x=0, y=0, width=50, height=50, color=(255, 0, 0)):
-        self.x = x
-        self.y = y
+        self._x = x
+        self._y = y
         self.width = width
         self.height = height
         self.color = color
@@ -20,6 +20,22 @@ class Actor:
     def act(self):
         """Override this method in subclasses."""
         pass
+
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        self._x = value
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self._y = value  # Same for y
 
     def move(self, dx, dy=None):
         if dy is None:
@@ -75,14 +91,22 @@ class World:
         self.height = height
         self.bg_color = bg_color
         self.actors = []
+        self._to_remove = []
 
     def add_actor(self, actor):
         actor.world = self
         self.actors.append(actor)
 
+    def remove_actor(self, actor):
+        if actor in self.actors:
+            self._to_remove.append(actor)
+            
     def update(self):
         for actor in self.actors:
             actor.act()
+        for actor in self._to_remove:
+            self.actors.remove(actor)
+        self._to_remove.clear()            
 
     def draw(self, screen):
         screen.fill(self.bg_color)
@@ -161,7 +185,8 @@ class Text(Actor):
 
     def draw(self, screen):
         text_surface = self.font.render(self.text, True, self.text_color, self.bg_color)
-        screen.blit(text_surface, (self.x, self.y))
+        text_rect = text_surface.get_rect(topleft=(self.x, self.y))  # Aligns correctly
+        screen.blit(text_surface, text_rect)
 
 class Sound:
     pygame.mixer.init()
@@ -173,11 +198,17 @@ class Sound:
         Sound.sounds[name] = pygame.mixer.Sound(filepath)
 
     @staticmethod
+    def get_sound(name):
+        """Retrieve a sound safely, returning None if not found."""
+        return Sound.sounds.get(name)
+
+    @staticmethod
     def play_sound(name, loop=False):
         """Play a loaded sound. If loop=True, play indefinitely."""
-        if name in Sound.sounds:
+        sound = Sound.get_sound(name)
+        if sound:
             loops = -1 if loop else 0
-            Sound.sounds[name].play(loops=loops)
+            sound.play(loops=loops)
 
     @staticmethod
     def stop_sound(name):
@@ -215,7 +246,6 @@ class Game:
                 elif event.type == pygame.KEYUP:
                     PyFoot._keys_pressed.discard(event.key)
                     PyFoot._keys_released.add(event.key)
-                    PyFoot._keys_pressed.discard(event.key)
                 elif event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
                     PyFoot.mouse_info.update(event)
             

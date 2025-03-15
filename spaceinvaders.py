@@ -1,5 +1,8 @@
-from engine import Actor, World, Game, PyFoot, Sound, Text
+from _pyfoot import Actor, World, Game, PyFoot, Sound, Text
+import os
 import random
+
+ASSETS_FOLDER = os.path.splitext(os.path.basename(__file__))[0]
 
 # Define Player (Spaceship)
 class Player(Actor):
@@ -23,10 +26,10 @@ class Bullet(Actor):
     def act(self):
         self.move(0, -5)
         if self.y < 0:
-            self.world.actors.remove(self)
+            self.world.remove_actor(self)
         elif self.isTouching(Invader):
             invader = self.getOneIntersectingObject(Invader)
-            self.world.actors.remove(self)
+            self.world.remove_actor(self)
             self.world.actors.remove(invader)
             Sound.play_sound("explosion")
             self.world.update_score()
@@ -48,9 +51,9 @@ class EnemyBullet(Actor):
     def act(self):
         self.move(0, 5)
         if self.y > self.world.getHeight():
-            self.world.actors.remove(self)
+            self.world.remove_actor(self)
         elif self.isTouching(Player):
-            self.world.actors.remove(self)
+            self.world.remove_actor(self)
             Sound.play_sound("explosion")
             self.world.game_over()
 

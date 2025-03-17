@@ -93,11 +93,13 @@ class World:
         self.actors = []
         self._to_remove = []
 
-    def add_actor(self, actor):
+    def addActor(self, actor):
         actor.world = self
         self.actors.append(actor)
+        if hasattr(actor, "addedToWorld"):  # Check if the method exists
+            actor.addedToWorld()  # Call the method
 
-    def remove_actor(self, actor):
+    def removeActor(self, actor):
         if actor in self.actors:
             self._to_remove.append(actor)
             
@@ -151,12 +153,12 @@ class PyFoot:
     _keys_released = set()
 
     @staticmethod
-    def is_key_pressed(key_name):
+    def isKeyPressed(key_name):
         key = KEY_MAP.get(key_name)
         return key in PyFoot._keys_pressed if key else False
 
     @staticmethod
-    def was_key_just_pressed(key_name):
+    def wasKeyJustPressed(key_name):
         key = KEY_MAP.get(key_name)
         if key and key in PyFoot._keys_pressed and key not in PyFoot._keys_held:
             PyFoot._keys_held.add(key)
@@ -164,7 +166,7 @@ class PyFoot:
         return False
 
     @staticmethod
-    def update_key_states():
+    def _update_key_states():
         """Removes keys from _keys_held only if they were released."""
         for key in PyFoot._keys_released:
             PyFoot._keys_held.discard(key)
@@ -193,31 +195,31 @@ class Sound:
     sounds = {}
 
     @staticmethod
-    def load_sound(name, filepath):
+    def loadSound(name, filepath):
         """Load a sound from a file."""
         Sound.sounds[name] = pygame.mixer.Sound(filepath)
 
     @staticmethod
-    def get_sound(name):
+    def getSound(name):
         """Retrieve a sound safely, returning None if not found."""
         return Sound.sounds.get(name)
 
     @staticmethod
-    def play_sound(name, loop=False):
+    def playSound(name, loop=False):
         """Play a loaded sound. If loop=True, play indefinitely."""
-        sound = Sound.get_sound(name)
+        sound = Sound.getSound(name)
         if sound:
             loops = -1 if loop else 0
             sound.play(loops=loops)
 
     @staticmethod
-    def stop_sound(name):
+    def stopSound(name):
         """Stop a playing sound."""
         if name in Sound.sounds:
             Sound.sounds[name].stop()
 
     @staticmethod
-    def set_volume(name, volume):
+    def setVolume(name, volume):
         """Set the volume of a loaded sound (0.0 to 1.0)."""
         if name in Sound.sounds:
             Sound.sounds[name].set_volume(volume)
@@ -237,7 +239,7 @@ class Game:
     def start(self):
         self.running = True
         while self.running:
-            PyFoot.update_key_states()
+            PyFoot._update_key_states()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False

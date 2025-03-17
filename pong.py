@@ -10,14 +10,14 @@ class Paddle(Actor):
 
     def act(self):
         if self.x < 100:  # Left paddle
-            if PyFoot.is_key_pressed("w") and self.y > 0:
+            if PyFoot.isKeyPressed("w") and self.y > 0:
                 self.move(0, -5)
-            if PyFoot.is_key_pressed("s") and self.y + self.height < self.world.getHeight():
+            if PyFoot.isKeyPressed("s") and self.y + self.height < self.world.getHeight():
                 self.move(0, 5)
         else:  # Right paddle
-            if PyFoot.is_key_pressed("up") and self.y > 0:
+            if PyFoot.isKeyPressed("up") and self.y > 0:
                 self.move(0, -5)
-            if PyFoot.is_key_pressed("down") and self.y + self.height < self.world.getHeight():
+            if PyFoot.isKeyPressed("down") and self.y + self.height < self.world.getHeight():
                 self.move(0, 5)
 
 # Define Ball
@@ -43,13 +43,13 @@ class PongWorld(World):
         self.score_left = 0
         self.score_right = 0
         self.score_display = Text(350, 20, "0 - 0", font_size=30, text_color=(255, 255, 255))
-        self.add_actor(self.score_display)
+        self.addActor(self.score_display)
         self.left_paddle = Paddle(50, 250)
         self.right_paddle = Paddle(730, 250)
         self.ball = Ball(400, 300)
-        self.add_actor(self.left_paddle)
-        self.add_actor(self.right_paddle)
-        self.add_actor(self.ball)
+        self.addActor(self.left_paddle)
+        self.addActor(self.right_paddle)
+        self.addActor(self.ball)
 
     def reset_ball(self):
         if self.ball.x <= 0:

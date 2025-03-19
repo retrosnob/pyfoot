@@ -12,20 +12,21 @@ Sound.loadSound("explosion", os.path.join(ASSETS_FOLDER, "explosion.wav"))
 class Ship(Actor):
     def __init__(self, x, y):
         super().__init__(x, y, width=60, height=20, color=(0, 255, 0))
+        PyFoot.setKeyCooldown("space", 20)  # Set a 10-frame cooldown for space key
 
     def act(self):
         if PyFoot.isKeyPressed("left") and self.x > 0:
             self.move(-5, 0)
         if PyFoot.isKeyPressed("right") and self.x + self.width < self.world.getWidth():
             self.move(5, 0)
-        if PyFoot.wasKeyJustPressed("space"):
+        if PyFoot.isKeyPressed("space"):
             self.world.addActor(DepthCharge(self.x + self.width // 2, self.y + 10))
             Sound.playSound("drop_charge")
 
-# Define Depth Charge
+# Define Depth Charge 
 class DepthCharge(Actor):
     def __init__(self, x, y):
-        super().__init__(x, y, width=10, height=20, color=(255, 255, 0))
+        super().__init__(x, y, width=10, height=20, color=(255, 255, 0)) 
 
     def act(self):
         self.move(0, 5)

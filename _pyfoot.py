@@ -37,6 +37,30 @@ class Actor:
     def y(self, value):
         self._y = value  # Same for y
 
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self._width = value
+
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        self._height = value
+
+    @property
+    def rotation(self):
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, angle):
+        self._rotation = angle % 360
+
     def move(self, dx, dy=None):
         if dy is None:
             radians = math.radians(self.rotation)
@@ -50,14 +74,8 @@ class Actor:
         self.x = x
         self.y = y
 
-    def setRotation(self, angle):
-        self.rotation = angle % 360
-
-    def getRotation(self):
-        return self.rotation
-
     def turn(self, degrees):
-        self.rotation = (self.rotation + degrees) % 360
+        self._rotation = (self._rotation + degrees) % 360
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
@@ -149,28 +167,41 @@ class MouseInfo:
 class PyFoot:
     mouse_info = MouseInfo()
     _keys_pressed = set()
-    _keys_held = set()
+    _keys_held = {}  # Now correctly tracks last pressed frame
     _keys_released = set()
+    _key_cooldowns = {}  # Stores cooldown times per key
+    _frame_count = 0  # Global frame counter
+
+    @staticmethod
+    def setKeyCooldown(key_name, cooldown_frames):
+        """Set a cooldown period for a key (in frames)."""
+        key = KEY_MAP.get(key_name)
+        if key:
+            PyFoot._key_cooldowns[key] = cooldown_frames
 
     @staticmethod
     def isKeyPressed(key_name):
         key = KEY_MAP.get(key_name)
-        return key in PyFoot._keys_pressed if key else False
-
-    @staticmethod
-    def wasKeyJustPressed(key_name):
-        key = KEY_MAP.get(key_name)
-        if key and key in PyFoot._keys_pressed and key not in PyFoot._keys_held:
-            PyFoot._keys_held.add(key)
+        if key and key in PyFoot._keys_pressed:
+            # Enforce cooldown
+            last_pressed = PyFoot._keys_held.get(key, -9999)
+            cooldown = PyFoot._key_cooldowns.get(key, 0)
+            if PyFoot._frame_count - last_pressed < cooldown:
+                return False  # Still in cooldown period
+            PyFoot._keys_held[key] = PyFoot._frame_count  # Update last press time
             return True
         return False
 
     @staticmethod
-    def _update_key_states():
+    def _updateKeyStates():
         """Removes keys from _keys_held only if they were released."""
         for key in PyFoot._keys_released:
-            PyFoot._keys_held.discard(key)
+            if key in PyFoot._keys_held:
+                del PyFoot._keys_held[key]  # Ensure keys reset properly
+
         PyFoot._keys_released.clear()
+        PyFoot._frame_count += 1  # Advance frame count
+
 
 class Text(Actor):
     def __init__(self, x, y, text, font_size=30, text_color=(255, 255, 255), bg_color=(0, 0, 0)):
@@ -239,7 +270,7 @@ class Game:
     def start(self):
         self.running = True
         while self.running:
-            PyFoot._update_key_states()
+            PyFoot._updateKeyStates()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False

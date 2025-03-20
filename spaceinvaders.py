@@ -17,12 +17,16 @@ class Player(Actor):
             self.move(-5, 0)
         if PyFoot.isKeyPressed("right") and self.x + self.width < self.world.getWidth():
             self.move(5, 0)
-        if PyFoot.wasKeyJustPressed("space"):
-            self.world.addActor(Bullet(self.x + self.width // 2, self.y))
-            Sound.playSound("shoot")
+        if PyFoot.isKeyPressed("space"):
+            if not Bullet.bulletInWorld:
+                self.world.addActor(Bullet(self.x + self.width // 2, self.y))
+                Sound.playSound("shoot")
 
 # Define Bullet
 class Bullet(Actor):
+
+    bulletInWorld = False
+
     def __init__(self, x, y):
         super().__init__(x, y, width=5, height=15, color=(255, 255, 0))
 
@@ -36,6 +40,12 @@ class Bullet(Actor):
             self.world.actors.remove(invader)
             Sound.playSound("explosion")
             self.world.updateScore()
+
+    def addedToWorld(self):
+        Bullet.bulletInWorld = True        
+
+    def removedFromWorld(self):
+        Bullet.bulletInWorld = False
 
 # Define Invaders
 class Invader(Actor):

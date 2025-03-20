@@ -109,7 +109,7 @@ class World:
         self.height = height
         self.bg_color = bg_color
         self.actors = []
-        self._to_remove = []
+        self._toRemove = []
 
     def addActor(self, actor):
         actor.world = self
@@ -118,15 +118,17 @@ class World:
             actor.addedToWorld()  # Call the method
 
     def removeActor(self, actor):
-        if actor in self.actors:
-            self._to_remove.append(actor)
-            
+        if actor in self.actors and actor not in self._toRemove:
+            self._toRemove.append(actor)
+            if hasattr(actor, "removedFromWorld"):  # Check if the method exists
+                actor.removedFromWorld()
+                            
     def update(self):
         for actor in self.actors:
             actor.act()
-        for actor in self._to_remove:
+        for actor in self._toRemove:
             self.actors.remove(actor)
-        self._to_remove.clear()            
+        self._toRemove.clear()            
 
     def draw(self, screen):
         screen.fill(self.bg_color)
@@ -165,42 +167,42 @@ class MouseInfo:
         return self.buttons.get(button, False)
     
 class PyFoot:
-    mouse_info = MouseInfo()
-    _keys_pressed = set()
-    _keys_held = {}  # Now correctly tracks last pressed frame
-    _keys_released = set()
-    _key_cooldowns = {}  # Stores cooldown times per key
-    _frame_count = 0  # Global frame counter
+    mouseInfo = MouseInfo()
+    _keysPressed = set()
+    _keysHeld = {}  # Now correctly tracks last pressed frame
+    _keysReleased = set()
+    _keyCooldowns = {}  # Stores cooldown times per key
+    _frameCount = 0  # Global frame counter
 
     @staticmethod
-    def setKeyCooldown(key_name, cooldown_frames):
+    def setKeyCooldown(keyName, cooldownFrames):
         """Set a cooldown period for a key (in frames)."""
-        key = KEY_MAP.get(key_name)
+        key = KEY_MAP.get(keyName)
         if key:
-            PyFoot._key_cooldowns[key] = cooldown_frames
+            PyFoot._keyCooldowns[key] = cooldownFrames
 
     @staticmethod
     def isKeyPressed(key_name):
         key = KEY_MAP.get(key_name)
-        if key and key in PyFoot._keys_pressed:
+        if key and key in PyFoot._keysPressed:
             # Enforce cooldown
-            last_pressed = PyFoot._keys_held.get(key, -9999)
-            cooldown = PyFoot._key_cooldowns.get(key, 0)
-            if PyFoot._frame_count - last_pressed < cooldown:
+            last_pressed = PyFoot._keysHeld.get(key, -9999)
+            cooldown = PyFoot._keyCooldowns.get(key, 0)
+            if PyFoot._frameCount - last_pressed < cooldown:
                 return False  # Still in cooldown period
-            PyFoot._keys_held[key] = PyFoot._frame_count  # Update last press time
+            PyFoot._keysHeld[key] = PyFoot._frameCount  # Update last press time
             return True
         return False
 
     @staticmethod
     def _updateKeyStates():
         """Removes keys from _keys_held only if they were released."""
-        for key in PyFoot._keys_released:
-            if key in PyFoot._keys_held:
-                del PyFoot._keys_held[key]  # Ensure keys reset properly
+        for key in PyFoot._keysReleased:
+            if key in PyFoot._keysHeld and PyFoot._frameCount - PyFoot._keysHeld[key] >= PyFoot._keyCooldowns.get(key, 0):
+                del PyFoot._keysHeld[key]  # Ensure keys reset properly
 
-        PyFoot._keys_released.clear()
-        PyFoot._frame_count += 1  # Advance frame count
+        PyFoot._keysReleased.clear()
+        PyFoot._frameCount += 1  # Advance frame count
 
 
 class Text(Actor):
@@ -275,12 +277,12 @@ class Game:
                 if event.type == pygame.QUIT:
                     self.running = False
                 elif event.type == pygame.KEYDOWN:
-                    PyFoot._keys_pressed.add(event.key)
+                    PyFoot._keysPressed.add(event.key)
                 elif event.type == pygame.KEYUP:
-                    PyFoot._keys_pressed.discard(event.key)
-                    PyFoot._keys_released.add(event.key)
+                    PyFoot._keysPressed.discard(event.key)
+                    PyFoot._keysReleased.add(event.key)
                 elif event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
-                    PyFoot.mouse_info.update(event)
+                    PyFoot.mouseInfo.update(event)
             
             self.world.update()
             self.world.draw(self.screen)
